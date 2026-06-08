@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>校園人生模擬器</title>
+
+<style>
+body{
+    font-family: Arial, sans-serif;
+    background:#f4f6f8;
+    display:flex;
+    justify-content:center;
+    padding:30px;
+}
+
+.container{
+    width:700px;
+    background:white;
+    padding:25px;
+    border-radius:15px;
+    box-shadow:0 0 15px rgba(0,0,0,.1);
+}
+
+h1{
+    text-align:center;
+}
+
+.stats{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:10px;
+    margin-bottom:20px;
+}
+
+.stat{
+    background:#eef3ff;
+    padding:12px;
+    border-radius:10px;
+}
+
+#event{
+    font-size:20px;
+    margin:20px 0;
+}
+
+.option{
+    width:100%;
+    padding:12px;
+    margin:8px 0;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+    font-size:16px;
+}
+
+.option:hover{
+    opacity:.9;
+}
+
+.log{
+    margin-top:20px;
+    max-height:200px;
+    overflow-y:auto;
+    background:#fafafa;
+    padding:10px;
+    border-radius:10px;
+}
+
+.end{
+    font-size:24px;
+    color:green;
+    text-align:center;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<h1>🎓 校園人生模擬器</h1>
+
+<h3>第 <span id="day">1</span> 天 / 30 天</h3>
+
+<div class="stats">
+<div class="stat">📚 成績：<span id="study">50</span></div>
+<div class="stat">💰 金錢：<span id="money">50</span></div>
+<div class="stat">😊 快樂：<span id="happy">50</span></div>
+<div class="stat">❤️ 健康：<span id="health">50</span></div>
+</div>
+
+<div id="event"></div>
+
+<div id="choices"></div>
+
+<div class="log" id="log"></div>
+
+</div>
+
+<script>
+
+let day = 1;
+
+let player = {
+    study:50,
+    money:50,
+    happy:50,
+    health:50
+};
+
+const events = [
+
+{
+text:"下週有重要考試。",
+choices:[
+{
+label:"📚 去圖書館讀書",
+effect:{study:+10,happy:-5}
+},
+{
+label:"🎮 回家打遊戲",
+effect:{happy:+15,study:-5}
+},
+{
+label:"🛍️ 跟朋友逛街",
+effect:{happy:+10,money:-10}
+},
+{
+label:"💼 去打工",
+effect:{money:+15,happy:-5}
+}
+]
+},
+
+{
+text:"最近身體有點疲勞。",
+choices:[
+{
+label:"😴 提早睡覺",
+effect:{health:+15}
+},
+{
+label:"📚 繼續讀書",
+effect:{study:+8,health:-8}
+},
+{
+label:"🎮 熬夜玩遊戲",
+effect:{happy:+12,health:-12}
+},
+{
+label:"🏃 去運動",
+effect:{health:+10,happy:+5}
+}
+]
+},
+
+{
+text:"朋友約你週末出門。",
+choices:[
+{
+label:"🍜 一起出去玩",
+effect:{happy:+12,money:-8}
+},
+{
+label:"📖 在家讀書",
+effect:{study:+10}
+},
+{
+label:"💼 打工賺錢",
+effect:{money:+20}
+},
+{
+label:"😴 在家休息",
+effect:{health:+10}
+}
+]
+}
+
+];
+
+function updateUI(){
+
+document.getElementById("day").innerText = day;
+
+document.getElementById("study").innerText = player.study;
+document.getElementById("money").innerText = player.money;
+document.getElementById("happy").innerText = player.happy;
+document.getElementById("health").innerText = player.health;
+
+}
+
+function randomEvent(){
+
+const event =
+events[Math.floor(Math.random()*events.length)];
+
+document.getElementById("event").innerText =
+event.text;
+
+const choicesDiv =
+document.getElementById("choices");
+
+choicesDiv.innerHTML = "";
+
+event.choices.forEach(choice=>{
+
+const btn =
+document.createElement("button");
+
+btn.className="option";
+
+btn.innerText=choice.label;
+
+btn.onclick=()=>{
+
+for(let key in choice.effect){
+
+player[key]+=choice.effect[key];
+
+player[key]=Math.max(
+0,
+Math.min(100,player[key])
+);
+
+}
+
+document.getElementById("log").innerHTML +=
+`<div>第${day}天：${choice.label}</div>`;
+
+day++;
+
+if(day>30){
+endGame();
+return;
+}
+
+updateUI();
+randomEvent();
+
+};
+
+choicesDiv.appendChild(btn);
+
+});
+
+}
+
+function endGame(){
+
+let result="普通人生";
+
+const total =
+player.study+
+player.money+
+player.happy+
+player.health;
+
+if(total>=320){
+
+result="🏆 人生勝利組";
+
+}
+else if(player.study>=80){
+
+result="🎓 學霸路線";
+
+}
+else if(player.money>=80){
+
+result="💰 創業富豪";
+
+}
+else if(player.happy>=80){
+
+result="😎 快樂人生";
+
+}
+else if(player.health>=80){
+
+result="🏃 健康達人";
+
+}
+
+document.querySelector(".container").innerHTML=
+`
+<h1>遊戲結束</h1>
+
+<div class="end">${result}</div>
+
+<h3>最終數值</h3>
+
+<p>📚 成績：${player.study}</p>
+<p>💰 金錢：${player.money}</p>
+<p>😊 快樂：${player.happy}</p>
+<p>❤️ 健康：${player.health}</p>
+
+<button onclick="location.reload()">
+重新開始
+</button>
+`;
+
+}
+
+updateUI();
+randomEvent();
+
+</script>
+
+</body>
+</html>
