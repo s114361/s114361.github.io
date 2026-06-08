@@ -203,8 +203,9 @@ button{
 
 let score = 0;
 let towerHeight = 0;
+let tower = [];
 let gameOver = false;
-
+    
 let ballX = 100;
 let ballY = 150;
 
@@ -291,16 +292,67 @@ createBall();
 
 function addTower(){
 
-    let scoop =
-    document.createElement("div");
+    tower.push({
 
-    scoop.className = "stack";
+        color:
+        currentGold
+        ?
+        "linear-gradient(45deg,#ffd700,#fff6a0,#ffcc00)"
+        :
+        currentColor,
 
-    if(currentGold){
+        gold: currentGold,
+
+        offset:
+        Math.random()*20 - 10,
+
+        rotate:
+        Math.random()*14 - 7
+
+    });
+
+    towerHeight++;
+
+    document.getElementById("height")
+    .innerText = towerHeight;
+}
+
+function drawTower(){
+
+    document
+    .querySelectorAll(".stack")
+    .forEach(x=>x.remove());
+
+    for(let i=0;i<tower.length;i++){
+
+        let scoop =
+        document.createElement("div");
+
+        scoop.className = "stack";
 
         scoop.style.background =
-        "linear-gradient(45deg,#ffd700,#fff6a0,#ffcc00)";
+        tower[i].color;
+
+        if(tower[i].gold){
+
+            scoop.style.boxShadow =
+            "0 0 15px gold";
+        }
+
+        scoop.style.left =
+        (coneX + 12 + tower[i].offset)
+        + "px";
+
+        scoop.style.bottom =
+        (115 + i*38)
+        + "px";
+
+        scoop.style.transform =
+        `rotate(${tower[i].rotate}deg)`;
+
+        game.appendChild(scoop);
     }
+}
     else{
 
         scoop.style.background =
@@ -408,25 +460,22 @@ function update(){
     else{
 
         ballY += 8;
+    let ballLeft = ballX;
+    let ballRight = ballX + 70;
 
-        let ballCenter =
-        ballX + 35;
+    let coneLeft = coneX;
+    let coneRight = coneX + 90;
 
-        let coneCenter =
-        coneX + 45;
-
-        if(
-            ballY >
-            window.innerHeight-220
+    if(
+        ballY >
+        window.innerHeight - 220
         ){
 
-            if(
-                Math.abs(
-                ballCenter -
-                coneCenter
-                ) < 40
-            ){
-
+        if(
+            ballRight > coneLeft &&
+            ballLeft < coneRight
+        ){
+     
                 if(currentGold)
                     score += 5;
                 else
@@ -457,6 +506,8 @@ function update(){
 
     cone.style.left =
     coneX + "px";
+
+drawTower();
 
     requestAnimationFrame(update);
 }
