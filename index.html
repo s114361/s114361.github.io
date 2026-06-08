@@ -2,16 +2,19 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>🍦 Ice Cream Tower</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Ice Cream Tower</title>
 
 <style>
 
-body{
+*{
     margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
     overflow:hidden;
-    background:linear-gradient(#87CEEB,#E0F7FF);
     font-family:Arial,sans-serif;
 }
 
@@ -19,61 +22,144 @@ body{
     position:relative;
     width:100vw;
     height:100vh;
+    overflow:hidden;
+
+    background:
+    linear-gradient(
+        to bottom,
+        #ffe5ec 0%,
+        #ffe5ec 35%,
+        #fff4d6 35%,
+        #fff4d6 100%
+    );
+}
+
+/* 招牌條紋 */
+
+#awning{
+    position:absolute;
+    top:0;
+    width:100%;
+    height:120px;
+
+    background:
+    repeating-linear-gradient(
+        45deg,
+        #ffb3c6,
+        #ffb3c6 20px,
+        white 20px,
+        white 40px
+    );
+}
+
+#title{
+    position:absolute;
+    top:25px;
+    width:100%;
+    text-align:center;
+    font-size:42px;
+    font-weight:bold;
+    z-index:5;
 }
 
 #ui{
     position:absolute;
-    top:15px;
-    left:15px;
+    top:140px;
+    left:20px;
     font-size:24px;
     font-weight:bold;
-    z-index:100;
+    z-index:5;
 }
 
-.ball{
+#ball{
     position:absolute;
-    width:60px;
-    height:60px;
+    width:70px;
+    height:70px;
+    z-index:4;
+}
+
+.scoopBall{
+    width:70px;
+    height:70px;
     border-radius:50%;
+    position:relative;
+    box-shadow:0 4px 10px rgba(0,0,0,.2);
 }
 
-#ball1{
-    background:pink;
+.topping{
+    position:absolute;
+    top:5px;
+    left:15px;
+    width:40px;
+    height:15px;
+    border-radius:20px;
+    background:#7b3f00;
 }
 
-#ball2{
-    background:khaki;
+.shine{
+    position:absolute;
+    top:10px;
+    left:15px;
+    width:18px;
+    height:18px;
+    border-radius:50%;
+    background:rgba(255,255,255,.5);
+}
+
+.gold{
+    box-shadow:
+    0 0 10px gold,
+    0 0 20px gold,
+    0 0 30px gold;
 }
 
 #cone{
     position:absolute;
     bottom:20px;
-    font-size:100px;
-    user-select:none;
+    width:90px;
+    height:120px;
 }
 
-.scoop{
+#cone::before{
+    content:"";
     position:absolute;
-    width:55px;
-    height:55px;
+
+    border-left:45px solid transparent;
+    border-right:45px solid transparent;
+    border-top:120px solid #c68642;
+}
+
+.stack{
+    position:absolute;
+    width:65px;
+    height:65px;
     border-radius:50%;
-    border:2px solid rgba(0,0,0,0.1);
+    box-shadow:0 4px 8px rgba(0,0,0,.2);
 }
 
 #endScreen{
+    display:none;
+
     position:absolute;
     top:50%;
     left:50%;
+
     transform:translate(-50%,-50%);
+
     background:white;
     padding:30px;
+
     border-radius:15px;
+
     text-align:center;
-    display:none;
-    box-shadow:0 0 20px rgba(0,0,0,0.3);
+
+    box-shadow:0 0 20px rgba(0,0,0,.3);
+
+    z-index:20;
 }
 
 button{
+    margin-top:15px;
     padding:10px 20px;
     font-size:18px;
     cursor:pointer;
@@ -81,10 +167,13 @@ button{
 
 </style>
 </head>
-
 <body>
 
 <div id="game">
+
+<div id="awning"></div>
+
+<div id="title">🍦 Ice Cream Tower</div>
 
 <div id="ui">
 🏆 分數：<span id="score">0</span><br>
@@ -92,20 +181,20 @@ button{
 ⏱️ 時間：<span id="time">30</span>
 </div>
 
-<div id="ball1" class="ball"></div>
-<div id="ball2" class="ball"></div>
+<div id="ball"></div>
 
-<div id="cone">🍦</div>
+<div id="cone"></div>
 
 <div id="endScreen">
-<h1>遊戲結束</h1>
+    <h1>🍦 遊戲結束</h1>
+    <h2 id="rank"></h2>
+    <br>
+    <p>🏆 分數：<span id="finalScore"></span></p>
+    <p>🍨 高度：<span id="finalHeight"></span></p>
 
-<p>得分：<span id="finalScore"></span></p>
-<p>冰淇淋高度：<span id="finalHeight"></span></p>
-
-<button onclick="location.reload()">
-重新開始
-</button>
+    <button onclick="location.reload()">
+        再玩一次
+    </button>
 </div>
 
 </div>
@@ -114,243 +203,316 @@ button{
 
 let score = 0;
 let towerHeight = 0;
-let timeLeft = 30;
 let gameOver = false;
 
-const cone = document.getElementById("cone");
+let ballX = 100;
+let ballY = 150;
 
-let coneX = window.innerWidth/2;
+let ballDir = 1;
+let ballFalling = false;
 
-const colors = [
-"#ffb6c1",
-"#fff0a8",
-"#c6f5c6",
-"#add8e6",
-"#ffd59e",
-"#d8b4ff",
-"#ffffff"
-];
+let coneX = 300;
 
-let balls = [
+const ball =
+document.getElementById("ball");
 
-{
-el:document.getElementById("ball1"),
-x:100,
-y:80,
-speed:4,
-dir:1,
-falling:false
-},
+const cone =
+document.getElementById("cone");
 
-{
-el:document.getElementById("ball2"),
-x:500,
-y:180,
-speed:5,
-dir:-1,
-falling:false
-}
+const game =
+document.getElementById("game");
+
+let currentGold = false;
+let currentColor = "";
+
+const flavors = [
+
+"radial-gradient(circle at 30% 30%,#ffd6e0,#ff8db1)",
+
+"radial-gradient(circle at 30% 30%,#fffef5,#f1dfb5)",
+
+"radial-gradient(circle at 30% 30%,#8b5a3c,#4b2d20)",
+
+"radial-gradient(circle at 30% 30%,#cde9b6,#6d9b4d)",
+
+"radial-gradient(circle at 30% 30%,#ffe29a,#ffb300)"
 
 ];
 
-function updateBall(ball){
+function createBall(){
 
-if(!ball.falling){
+    currentGold =
+    Math.random() < 0.1;
 
-ball.x += ball.speed * ball.dir;
+    ball.innerHTML = "";
 
-if(ball.x <= 0 ||
-ball.x >= window.innerWidth - 60){
+    let scoop =
+    document.createElement("div");
 
-ball.dir *= -1;
+    scoop.className = "scoopBall";
 
+    if(currentGold){
+
+        scoop.classList.add("gold");
+
+        scoop.style.background =
+        "linear-gradient(45deg,#ffd700,#fff6a0,#ffcc00)";
+    }
+    else{
+
+        currentColor =
+        flavors[
+            Math.floor(
+            Math.random()*flavors.length
+            )
+        ];
+
+        scoop.style.background =
+        currentColor;
+    }
+
+    let topping =
+    document.createElement("div");
+
+    topping.className = "topping";
+
+    let shine =
+    document.createElement("div");
+
+    shine.className = "shine";
+
+    scoop.appendChild(topping);
+    scoop.appendChild(shine);
+
+    ball.appendChild(scoop);
 }
 
-}
-else{
+createBall();
 
-ball.y += 8;
+function addTower(){
 
-let coneCenter = coneX + 50;
+    let scoop =
+    document.createElement("div");
 
-if(ball.y > window.innerHeight - 220){
+    scoop.className = "stack";
 
-if(
-ball.x + 30 > coneCenter - 45 &&
-ball.x + 30 < coneCenter + 45
-){
+    if(currentGold){
 
-score++;
+        scoop.style.background =
+        "linear-gradient(45deg,#ffd700,#fff6a0,#ffcc00)";
+    }
+    else{
 
-document.getElementById("score")
-.innerText = score;
+        scoop.style.background =
+        currentColor;
+    }
 
-addIceCream();
+    let offset =
+    Math.random()*20 - 10;
 
-resetBall(ball);
+    let rotate =
+    Math.random()*14 - 7;
 
-}
+    scoop.style.left =
+    (coneX + 12 + offset)
+    + "px";
 
-}
+    scoop.style.bottom =
+    (115 + towerHeight*38)
+    + "px";
 
-if(ball.y > window.innerHeight){
+    scoop.style.transform =
+    "rotate("+rotate+"deg)";
 
-resetBall(ball);
+    game.appendChild(scoop);
 
-}
+    towerHeight++;
 
-}
-
-ball.el.style.left = ball.x + "px";
-ball.el.style.top = ball.y + "px";
-
-}
-
-function resetBall(ball){
-
-ball.falling = false;
-
-ball.y = Math.random()*150 + 50;
-
-ball.x = Math.random()*(window.innerWidth-60);
-
+    document.getElementById("height")
+    .innerText = towerHeight;
 }
 
-function addIceCream(){
+function resetBall(){
 
-let scoop =
-document.createElement("div");
+    ballX =
+    Math.random() *
+    (window.innerWidth-70);
 
-scoop.className = "scoop";
+    ballY = 150;
 
-scoop.style.background =
-colors[Math.floor(Math.random()*colors.length)];
+    ballFalling = false;
 
-let offset =
-Math.random()*20 - 10;
-
-let angle =
-Math.random()*16 - 8;
-
-scoop.style.left =
-(coneX + 20 + offset) + "px";
-
-scoop.style.bottom =
-(120 + towerHeight*35) + "px";
-
-scoop.style.transform =
-"rotate(" + angle + "deg)";
-
-document
-.getElementById("game")
-.appendChild(scoop);
-
-towerHeight++;
-
-document.getElementById("height")
-.innerText = towerHeight;
-
-}
-
-function gameLoop(){
-
-if(gameOver) return;
-
-for(let i=0;i<balls.length;i++){
-
-updateBall(balls[i]);
-
-}
-
-cone.style.left = coneX + "px";
-
-requestAnimationFrame(gameLoop);
-
+    createBall();
 }
 
 function dropBall(){
 
-if(gameOver) return;
+    if(gameOver) return;
 
-for(let i=0;i<balls.length;i++){
+    if(!ballFalling){
 
-if(!balls[i].falling){
-
-balls[i].falling = true;
-
-break;
-
+        ballFalling = true;
+    }
 }
 
-}
+document.addEventListener(
+"click",
+dropBall
+);
 
-}
+document.addEventListener(
+"keydown",
+function(e){
 
-document.addEventListener("click",dropBall);
+    if(e.code==="Space"){
 
-document.addEventListener("keydown",function(e){
+        dropBall();
+    }
 
-if(e.code==="Space"){
+    if(e.key==="a" ||
+       e.key==="ArrowLeft"){
 
-dropBall();
+        coneX -= 25;
+    }
 
-}
+    if(e.key==="d" ||
+       e.key==="ArrowRight"){
 
-if(e.key==="a" ||
-e.key==="ArrowLeft"){
+        coneX += 25;
+    }
 
-coneX -= 25;
+    if(coneX < 0)
+    coneX = 0;
 
-}
-
-if(e.key==="d" ||
-e.key==="ArrowRight"){
-
-coneX += 25;
-
-}
-
-if(coneX < 0){
-
-coneX = 0;
-
-}
-
-if(coneX > window.innerWidth-100){
-
-coneX = window.innerWidth-100;
-
-}
-
+    if(coneX >
+       window.innerWidth-90)
+    coneX =
+       window.innerWidth-90;
 });
 
-const timer = setInterval(function(){
+function update(){
 
-timeLeft--;
+    if(gameOver) return;
 
-document.getElementById("time")
-.innerText = timeLeft;
+    if(!ballFalling){
 
-if(timeLeft <= 0){
+        ballX += ballDir * 5;
 
-clearInterval(timer);
+        if(ballX <= 0 ||
+           ballX >=
+           window.innerWidth-70){
 
-gameOver = true;
+            ballDir *= -1;
+        }
+    }
+    else{
 
-document.getElementById("finalScore")
-.innerText = score;
+        ballY += 8;
 
-document.getElementById("finalHeight")
-.innerText = towerHeight;
+        let ballCenter =
+        ballX + 35;
 
-document.getElementById("endScreen")
-.style.display = "block";
+        let coneCenter =
+        coneX + 45;
 
+        if(
+            ballY >
+            window.innerHeight-220
+        ){
+
+            if(
+                Math.abs(
+                ballCenter -
+                coneCenter
+                ) < 40
+            ){
+
+                if(currentGold)
+                    score += 5;
+                else
+                    score += 1;
+
+                document
+                .getElementById("score")
+                .innerText = score;
+
+                addTower();
+
+                resetBall();
+            }
+        }
+
+        if(ballY >
+           window.innerHeight){
+
+            resetBall();
+        }
+    }
+
+    ball.style.left =
+    ballX + "px";
+
+    ball.style.top =
+    ballY + "px";
+
+    cone.style.left =
+    coneX + "px";
+
+    requestAnimationFrame(update);
 }
 
-},1000);
+update();
 
-gameLoop();
+let time = 30;
+
+const timer =
+setInterval(function(){
+
+    time--;
+
+    document
+    .getElementById("time")
+    .innerText = time;
+
+    if(time <= 0){
+
+        clearInterval(timer);
+
+        gameOver = true;
+
+        let rank = "";
+
+        if(score < 5)
+            rank = "😅 實習店員";
+        else if(score < 10)
+            rank = "🍦 冰淇淋學徒";
+        else if(score < 15)
+            rank = "👨‍🍳 冰淇淋師傅";
+        else if(score < 20)
+            rank = "⭐ 冰淇淋大師";
+        else if(score < 25)
+            rank = "👑 冰淇淋之王";
+        else
+            rank = "🌈 傳說級冰淇淋神匠";
+
+        document
+        .getElementById("rank")
+        .innerText = rank;
+
+        document
+        .getElementById("finalScore")
+        .innerText = score;
+
+        document
+        .getElementById("finalHeight")
+        .innerText = towerHeight;
+
+        document
+        .getElementById("endScreen")
+        .style.display = "block";
+    }
+
+},1000);
 
 </script>
 
